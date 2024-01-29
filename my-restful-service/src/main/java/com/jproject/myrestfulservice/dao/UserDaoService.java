@@ -25,7 +25,7 @@ public class UserDaoService {
 
     public User save(User user){
         if(user.getId() == null ){
-            user.setId(userCount);
+            user.setId(users.size()+1);
         }
         if(user.getJoinDate() == null){
             user.setJoinDate(new Date());
