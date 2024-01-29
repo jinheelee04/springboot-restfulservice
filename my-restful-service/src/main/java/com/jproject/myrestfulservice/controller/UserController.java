@@ -2,6 +2,7 @@ package com.jproject.myrestfulservice.controller;
 
 import com.jproject.myrestfulservice.bean.User;
 import com.jproject.myrestfulservice.dao.UserDaoService;
+import com.jproject.myrestfulservice.exception.UserNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -24,9 +25,14 @@ public class UserController {
 
     @GetMapping("/users/{id}")
     public User retrieveUser(@PathVariable int id){
-        return service.findOne(id);
+        User user = service.findOne(id);
+
+        if(user == null){
+            throw new UserNotFoundException(String.format("ID[%s] not found", id));
+        }
+        return user;
     }
-    
+
     @PostMapping("/users")
     public ResponseEntity<User> createUser(@RequestBody User user){
         User savedUser = service.save(user);
