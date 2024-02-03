@@ -3,16 +3,18 @@ package com.jproject.myrestfulservice.controller;
 import com.jproject.myrestfulservice.bean.User;
 import com.jproject.myrestfulservice.exception.UserNotFoundException;
 import com.jproject.myrestfulservice.repository.UserRepository;
+import jakarta.validation.Valid;
 import org.apache.coyote.Response;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -28,8 +30,12 @@ public class UserJpaController {
     }
 
     @GetMapping("/users")
-    public List<User> retrieveAllUsers(){
-        return userRepository.findAll();
+    public Map<String, Object> retrieveAllUsers(){
+        Map<String, Object> rtnMap = new HashMap<>();
+        List<User> users = userRepository.findAll();
+        rtnMap.put("count", users.size());
+        rtnMap.put("users", users);
+        return rtnMap;
     }
     @GetMapping("/users/{id}")
     public ResponseEntity retrieveUserById(@PathVariable int id){
@@ -41,6 +47,19 @@ public class UserJpaController {
         WebMvcLinkBuilder linTo = linkTo(methodOn(this.getClass()).retrieveAllUsers());
         entityModel.add(linTo.withRel("all-users"));
         return ResponseEntity.ok(entityModel);
+    }
+
+    @DeleteMapping("/users/{id}")
+    public void deleteUserById(@PathVariable int id){
+        userRepository.deleteById(id);
+    }
+
+    @PostMapping("/users")
+    public ResponseEntity<User> createUser(@Valid @RequestBody User user){
+        User savedUser = userRepository.save(user);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}").buildAndExpand(savedUser.getId()).toUri();
+        return ResponseEntity.created(location).build();
     }
 
 }
