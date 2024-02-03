@@ -1,5 +1,7 @@
 package com.jproject.myrestfulservice.controller;
 
+import com.jproject.myrestfulservice.bean.Post;
+import com.jproject.myrestfulservice.bean.ResponseData;
 import com.jproject.myrestfulservice.bean.User;
 import com.jproject.myrestfulservice.exception.UserNotFoundException;
 import com.jproject.myrestfulservice.repository.UserRepository;
@@ -30,12 +32,18 @@ public class UserJpaController {
     }
 
     @GetMapping("/users")
-    public Map<String, Object> retrieveAllUsers(){
-        Map<String, Object> rtnMap = new HashMap<>();
+    public ResponseEntity retrieveAllUsers(){
         List<User> users = userRepository.findAll();
-        rtnMap.put("count", users.size());
-        rtnMap.put("users", users);
-        return rtnMap;
+        ResponseData response = ResponseData.builder()
+                .count(users == null || users.isEmpty() ? 0 : users.size())
+                .users(users)
+                .build();
+
+        EntityModel entityModel = EntityModel.of(response);
+        WebMvcLinkBuilder linkTo = linkTo(methodOn(this.getClass()).retrieveAllUsers());
+        entityModel.add(linkTo.withSelfRel());
+
+        return ResponseEntity.ok(entityModel);
     }
     @GetMapping("/users/{id}")
     public ResponseEntity retrieveUserById(@PathVariable int id){
@@ -61,5 +69,12 @@ public class UserJpaController {
                 .path("/{id}").buildAndExpand(savedUser.getId()).toUri();
         return ResponseEntity.created(location).build();
     }
-
+    @GetMapping("/users/{id}/posts")
+    public List<Post> retrieveAllPostsByUser(@PathVariable int id){
+        Optional<User> user = userRepository.findById(id);
+        if(!user.isPresent()){
+            throw new UserNotFoundException("id-"+id);
+        }
+        return user.get().getPosts();
+    }
 }
